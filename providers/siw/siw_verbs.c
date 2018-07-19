@@ -131,36 +131,35 @@ struct ibv_mr *siw_reg_mr(struct ibv_pd *pd, void *addr,
 {
 	struct siw_cmd_reg_umr_req cmd;
 	struct siw_cmd_reg_umr_resp resp;
-	struct siw_mr *mr;
+	struct verbs_mr *base_mr;
 	int rv;
 
 	memset(&cmd, 0, sizeof(cmd));
 	memset(&resp, 0, sizeof(resp));
 
-	mr = calloc(1, sizeof(*mr));
-	if (!mr)
+	base_mr = calloc(1, sizeof(*base_mr));
+	if (!base_mr)
 		return NULL;
 
 	rv = ibv_cmd_reg_mr(pd, addr, len, (uintptr_t)addr, access,
-			    &mr->base_mr, &cmd.base, sizeof(cmd),
+			    base_mr, &cmd.base, sizeof(cmd),
 			    &resp.base, sizeof(resp));
 	if (rv) {
-		free(mr);
+		free(base_mr);
 		return NULL;
 	}
-	return &mr->base_mr;
+	return &base_mr->ibv_mr;
 }
 
-int siw_dereg_mr(struct ibv_mr *base_mr)
+int siw_dereg_mr(struct verbs_mr *base_mr)
 {
-	struct siw_mr *mr = mr_base2siw(base_mr);
 	int rv;
 
 	rv = ibv_cmd_dereg_mr(base_mr);
 	if (rv)
 		return rv;
 
-	free(mr);
+	free(base_mr);
 	return 0;
 }
 

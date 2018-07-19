@@ -299,6 +299,11 @@ static int get_iwpm_tcp_port(__u16 addr_family, __be16 requested_port,
 		str_err = "Invalid Internet address family";
 		goto get_tcp_port_error;
 	}
+	/* FIXME: skip port binding for siw, since siw uses kernel TCP.
+	 *        This needs a more serious code change to let siw
+	 *        co-exist/skip (with) IWPM
+	 */
+	return 0;
 
 	if (bind(*new_sock, &bind_addr.sock_addr, sizeof(bind_addr))) {
 		str_err = "Unable to bind the socket";

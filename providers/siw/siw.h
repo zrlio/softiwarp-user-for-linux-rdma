@@ -62,10 +62,6 @@ struct siw_srq {
 	pthread_spinlock_t	lock;
 };
 
-struct siw_mr {
-	struct ibv_mr	base_mr;
-};
-
 struct siw_qp {
 	struct ibv_qp		base_qp;
 	struct siw_device	*siw_dev;
@@ -129,7 +125,6 @@ struct siw_context {
 	container_of(ibv_ctx, struct siw_context, base_ctx.context)
 #define	qp_base2siw(ibv_qp)   container_of(ibv_qp, struct siw_qp, base_qp)
 #define	cq_base2siw(ibv_cq)   container_of(ibv_cq, struct siw_cq, base_cq)
-#define	mr_base2siw(ibv_mr)   container_of(ibv_mr, struct siw_mr, base_mr)
 #define	srq_base2siw(ibv_srq) container_of(ibv_srq, struct siw_srq, base_srq)
 
 extern int siw_query_device(struct ibv_context *ctx,
@@ -142,7 +137,7 @@ extern struct ibv_pd *siw_alloc_pd(struct ibv_context *ctx);
 extern int siw_free_pd(struct ibv_pd *pd);
 extern struct ibv_mr *siw_reg_mr(struct ibv_pd *pd, void *addr,
 				 size_t len, int access);
-extern int siw_dereg_mr(struct ibv_mr *base_mr);
+extern int siw_dereg_mr(struct verbs_mr *base_mr);
 extern struct ibv_cq *siw_create_cq(struct ibv_context *ctx, int num_cqe,
 				    struct ibv_comp_channel *channel,
 				    int comp_vector);

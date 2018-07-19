@@ -94,7 +94,8 @@ static struct verbs_context *siw_alloc_context(struct ibv_device *base_dev,
 	memset(&cmd, 0, sizeof(cmd));
 	memset(&resp, 0, sizeof(resp));
 
-	ctx = verbs_init_and_alloc_context(base_dev, fd, ctx, base_ctx);
+	ctx = verbs_init_and_alloc_context(base_dev, fd, ctx, base_ctx,
+					   RDMA_DRIVER_SIW);
 	if (!ctx)
 		return NULL;
 
