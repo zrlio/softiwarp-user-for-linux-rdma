@@ -18,6 +18,7 @@ ENV{ID_NET_DRIVER}=="qede", RUN{builtin}+="kmod load qedr"
 
 # The user must explicitly load these modules via /etc/modules-load.d/ or otherwise
 # rxe
+# siw
 
 # When in IB mode the kernel PCI core module autoloads the protocol modules
 # for these providers

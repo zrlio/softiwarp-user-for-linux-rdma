@@ -243,8 +243,8 @@ static bool match_device(const struct verbs_device_ops *ops,
 {
 	if (ops->match_table) {
 		/* The internally generated alias is checked first, since some
-		 * devices like rxe can attach to a random modalias, including
-		 * ones that match other providers.
+		 * devices like rxe and siw can attach to a random modalias,
+		 * including ones that match other providers.
 		 */
 		sysfs_dev->match = match_name(ops, sysfs_dev);
 		if (!sysfs_dev->match)

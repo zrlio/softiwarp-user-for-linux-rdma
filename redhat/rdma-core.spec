@@ -119,6 +119,8 @@ Provides: libocrdma = %{version}-%{release}
 Obsoletes: libocrdma < %{version}-%{release}
 Provides: librxe = %{version}-%{release}
 Obsoletes: librxe < %{version}-%{release}
+Provides: libsiw = %{version}-%{release}
+Obsoletes: libsiw < %{version}-%{release}
 
 %description -n libibverbs
 libibverbs is a library that allows userspace processes to use RDMA
@@ -142,6 +144,7 @@ Device-specific plug-in ibverbs userspace drivers are included:
 - libocrdma: Emulex OneConnect RDMA/RoCE Device
 - libqedr: QLogic QL4xxx RoCE HCA
 - librxe: A software implementation of the RoCE protocol
+- libsiw: A software implementation of the iWARP protocol
 - libvmw_pvrdma: VMware paravirtual RDMA device
 
 %package -n libibverbs-utils

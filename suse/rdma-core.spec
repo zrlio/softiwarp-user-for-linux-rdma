@@ -177,6 +177,7 @@ Obsoletes:      libmthca-rdmav2 < %{version}-%{release}
 Obsoletes:      libnes-rdmav2 < %{version}-%{release}
 Obsoletes:      libocrdma-rdmav2 < %{version}-%{release}
 Obsoletes:      librxe-rdmav2 < %{version}-%{release}
+Obsoletes:      libsiw-rdmav2 < %{version}-%{release}
 %if 0%{?dma_coherent}
 Requires:       %{mlx4_lname} = %{version}-%{release}
 Requires:       %{mlx5_lname} = %{version}-%{release}
@@ -207,6 +208,7 @@ Device-specific plug-in ibverbs userspace drivers are included:
 - libocrdma: Emulex OneConnect RDMA/RoCE Device
 - libqedr: QLogic QL4xxx RoCE HCA
 - librxe: A software implementation of the RoCE protocol
+- libsiw: A software implementation of the iWARP protocol
 - libvmw_pvrdma: VMware paravirtual RDMA device
 
 %package -n %verbs_lname
