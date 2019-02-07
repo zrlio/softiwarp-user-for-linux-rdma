@@ -50,10 +50,6 @@ struct siw_device {
 	struct verbs_device	base_dev;
 };
 
-struct siw_pd {
-	struct ibv_pd	base_pd;
-};
-
 struct siw_srq {
 	struct ibv_srq		base_srq;
 	struct siw_rqe		*recvq;

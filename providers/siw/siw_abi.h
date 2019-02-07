@@ -45,16 +45,6 @@
 /*
  * response structures for resource allocation calls
  */
-
-struct siw_alloc_pd {
-	struct ibv_alloc_pd base;
-};
-
-struct siw_alloc_pd_resp {
-	struct ib_uverbs_alloc_pd_resp base;
-	uint32_t pd_id;
-};
-
 struct siw_alloc_ucontext_resp {
 	struct ib_uverbs_get_context_resp base;
 	struct siw_uresp_alloc_ctx siw;

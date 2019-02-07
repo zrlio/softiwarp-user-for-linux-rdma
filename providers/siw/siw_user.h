@@ -44,8 +44,6 @@
 /*Common string that is matched to accept the device by the user library*/
 #define SIW_NODE_DESC_COMMON	"Software iWARP stack"
 
-#define SIW_IBDEV_PREFIX "siw_"
-
 #define VERSION_ID_SOFTIWARP	2
 
 #define SIW_MAX_SGE		6
@@ -56,6 +54,7 @@ struct siw_uresp_create_cq {
 	uint32_t	cq_id;
 	uint32_t	num_cqe;
 	uint32_t	cq_key;
+	uint32_t	pad;
 };
 
 struct siw_uresp_create_qp {
@@ -64,15 +63,18 @@ struct siw_uresp_create_qp {
 	uint32_t	num_rqe;
 	uint32_t	sq_key;
 	uint32_t	rq_key;
+	uint32_t	pad;
 };
 
 struct siw_ureq_reg_mr {
-	uint8_t	stag_key;
-	uint8_t	reserved[3];
+	uint8_t		stag_key;
+	uint8_t		reserved[3];
+	uint32_t	pad;
 };
 
 struct siw_uresp_reg_mr {
 	uint32_t	stag;
+	uint32_t	pad;
 };
 
 struct siw_uresp_create_srq {
@@ -82,6 +84,7 @@ struct siw_uresp_create_srq {
 
 struct siw_uresp_alloc_ctx {
 	uint32_t	dev_id;
+	uint32_t	pad;
 };
 
 enum siw_opcode {

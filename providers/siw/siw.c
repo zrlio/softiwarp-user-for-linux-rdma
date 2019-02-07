@@ -98,8 +98,8 @@ static int siw_query_qp(struct ibv_qp *qp, struct ibv_qp_attr *attr,
 static struct ibv_pd *siw_alloc_pd(struct ibv_context *ctx)
 {
 	struct ibv_alloc_pd cmd;
-	struct siw_alloc_pd_resp resp;
-	struct siw_pd *pd;
+	struct ib_uverbs_alloc_pd_resp resp;
+	struct ibv_pd *pd;
 
 	memset(&cmd, 0, sizeof(cmd));
 
@@ -107,12 +107,12 @@ static struct ibv_pd *siw_alloc_pd(struct ibv_context *ctx)
 	if (!pd)
 		return NULL;
 
-	if (ibv_cmd_alloc_pd(ctx, &pd->base_pd, &cmd, sizeof(cmd),
-			     &resp.base, sizeof(resp))) {
+	if (ibv_cmd_alloc_pd(ctx, pd, &cmd, sizeof(cmd),
+			     &resp, sizeof(resp))) {
 		free(pd);
 		return NULL;
 	}
-	return &pd->base_pd;
+	return pd;
 }
 
 static int siw_free_pd(struct ibv_pd *pd)
