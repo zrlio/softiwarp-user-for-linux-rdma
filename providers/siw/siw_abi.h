@@ -52,13 +52,15 @@ struct siw_alloc_ucontext_resp {
 
 struct siw_cmd_reg_umr_req {
 	struct ibv_reg_mr base;
-	uint8_t	 stag_key;
+	uint8_t stag_key;
 	uint8_t reserved[3];
+	uint32_t pad;
 };
 
 struct siw_cmd_reg_umr_resp {
 	struct ib_uverbs_reg_mr_resp base;
 	uint32_t stag;
+	uint32_t pad;
 };
 
 struct siw_cmd_create_cq {
