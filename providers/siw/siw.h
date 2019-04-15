@@ -3,7 +3,7 @@
  *
  * Authors: Bernard Metzler <bmt@zurich.ibm.com>
  *
- * Copyright (c) 2008-2017, IBM Corporation
+ * Copyright (c) 2008-2019, IBM Corporation
  *
  * This software is available to you under a choice of one of two
  * licenses. You may choose to be licensed under the terms of the GNU
@@ -47,85 +47,87 @@
 #include <infiniband/kern-abi.h>
 
 struct siw_device {
-	struct verbs_device	base_dev;
+	struct verbs_device base_dev;
 };
 
 struct siw_srq {
-	struct ibv_srq		base_srq;
-	struct siw_rqe		*recvq;
-	uint32_t		rq_put;
-	uint32_t		num_rqe;
-	pthread_spinlock_t	lock;
+	struct ibv_srq base_srq;
+	struct siw_rqe *recvq;
+	uint32_t rq_put;
+	uint32_t num_rqe;
+	pthread_spinlock_t lock;
 };
 
 struct siw_mr {
-	struct verbs_mr	base_mr;
+	struct verbs_mr base_mr;
 };
 
 struct siw_qp {
-	struct ibv_qp		base_qp;
-	struct siw_device	*siw_dev;
+	struct ibv_qp base_qp;
+	struct siw_device *siw_dev;
 
-	uint32_t		id;
+	uint32_t id;
 
-	pthread_spinlock_t	sq_lock;
-	pthread_spinlock_t	rq_lock;
+	pthread_spinlock_t sq_lock;
+	pthread_spinlock_t rq_lock;
 
-	struct ibv_post_send		db_req;
-	struct ib_uverbs_post_send_resp	db_resp;
+	struct ibv_post_send db_req;
+	struct ib_uverbs_post_send_resp db_resp;
 
-	uint32_t		num_sqe;
-	uint32_t		sq_put;
-	int			sq_sig_all;
-	struct siw_sqe		*sendq;
+	uint32_t num_sqe;
+	uint32_t sq_put;
+	int sq_sig_all;
+	struct siw_sqe *sendq;
 
-	uint32_t		num_rqe;
-	uint32_t		rq_put;
-	struct siw_rqe		*recvq;
-	struct siw_srq		*srq;
+	uint32_t num_rqe;
+	uint32_t rq_put;
+	struct siw_rqe *recvq;
+	struct siw_srq *srq;
 };
 
 struct siw_cq {
-	struct ibv_cq		base_cq;
-	struct siw_device	*siw_dev;
-	uint32_t		id;
+	struct ibv_cq base_cq;
+	struct siw_device *siw_dev;
+	uint32_t id;
 
 	/* Points to kernel shared control
 	 * object at the end of CQE array
 	 */
-	struct siw_cq_ctrl	*ctrl;
+	struct siw_cq_ctrl *ctrl;
 
-	int			num_cqe;
-	uint32_t		cq_get;
-	struct siw_cqe		*queue;
-	pthread_spinlock_t	lock;
+	int num_cqe;
+	uint32_t cq_get;
+	struct siw_cqe *queue;
+	pthread_spinlock_t lock;
 };
 
 struct siw_context {
-	struct verbs_context	base_ctx;
-	uint32_t		dev_id;
+	struct verbs_context base_ctx;
+	uint32_t dev_id;
 };
 
 #undef offsetof
 #ifdef __compiler_offsetof
 #define offsetof(TYPE, MEMBER) __compiler_offsetof(TYPE, MEMBER)
 #else
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#define offsetof(TYPE, MEMBER) ((size_t) & ((TYPE *)0)->MEMBER)
 #endif
 
 #ifndef container_of
-	#define container_of(ptr, type, member) ({                      \
-		const typeof(((type *)0)->member) (*__mptr) = (ptr);    \
-		(type *)((char *)__mptr - offsetof(type, member)); })
+#define container_of(ptr, type, member)                                        \
+	({                                                                     \
+		const typeof(((type *)0)->member)(*__mptr) = (ptr);            \
+		(type *)((char *)__mptr - offsetof(type, member));             \
+	})
 #endif
 
-#define ctx_base2siw(base_ctx)\
+#define ctx_base2siw(base_ctx)                                                 \
 	container_of(base_ctx, struct siw_context, base_ctx)
-#define ctx_ibv2siw(ibv_ctx)\
+#define ctx_ibv2siw(ibv_ctx)                                                   \
 	container_of(ibv_ctx, struct siw_context, base_ctx.context)
-#define	qp_base2siw(ibv_qp)   container_of(ibv_qp, struct siw_qp, base_qp)
-#define	cq_base2siw(ibv_cq)   container_of(ibv_cq, struct siw_cq, base_cq)
-#define	mr_base2siw(verbs_mr) container_of(verbs_mr, struct siw_mr, base_mr)
-#define	srq_base2siw(ibv_srq) container_of(ibv_srq, struct siw_srq, base_srq)
+#define qp_base2siw(ibv_qp) container_of(ibv_qp, struct siw_qp, base_qp)
+#define cq_base2siw(ibv_cq) container_of(ibv_cq, struct siw_cq, base_cq)
+#define mr_base2siw(verbs_mr) container_of(verbs_mr, struct siw_mr, base_mr)
+#define srq_base2siw(ibv_srq) container_of(ibv_srq, struct siw_srq, base_srq)
 
-#endif	/* _SIW_H */
+#endif /* _SIW_H */

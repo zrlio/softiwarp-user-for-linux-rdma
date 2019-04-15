@@ -3,7 +3,7 @@
  *
  * Authors: Bernard Metzler <bmt@zurich.ibm.com>
  *
- * Copyright (c) 2008-2017, IBM Corporation
+ * Copyright (c) 2008-2019, IBM Corporation
  *
  * This software is available to you under a choice of one of two
  * licenses. You may choose to be licensed under the terms of the GNU
@@ -53,7 +53,7 @@ const int siw_debug;
 static int siw_query_device(struct ibv_context *ctx,
 			    struct ibv_device_attr *attr)
 {
-	struct ibv_query_device	cmd;
+	struct ibv_query_device cmd;
 	uint64_t raw_fw_ver;
 	unsigned int major, minor, sub_minor;
 	int rv;
@@ -68,8 +68,8 @@ static int siw_query_device(struct ibv_context *ctx,
 	minor = (raw_fw_ver >> 16) & 0xffff;
 	sub_minor = raw_fw_ver & 0xffff;
 
-	snprintf(attr->fw_ver, sizeof(attr->fw_ver),
-		 "%d.%d.%d", major, minor, sub_minor);
+	snprintf(attr->fw_ver, sizeof(attr->fw_ver), "%d.%d.%d", major, minor,
+		 sub_minor);
 
 	return 0;
 }
@@ -91,8 +91,8 @@ static int siw_query_qp(struct ibv_qp *qp, struct ibv_qp_attr *attr,
 
 	memset(&cmd, 0, sizeof(cmd));
 
-	return ibv_cmd_query_qp(qp, attr, attr_mask, init_attr,
-				&cmd, sizeof(cmd));
+	return ibv_cmd_query_qp(qp, attr, attr_mask, init_attr, &cmd,
+				sizeof(cmd));
 }
 
 static struct ibv_pd *siw_alloc_pd(struct ibv_context *ctx)
@@ -107,8 +107,7 @@ static struct ibv_pd *siw_alloc_pd(struct ibv_context *ctx)
 	if (!pd)
 		return NULL;
 
-	if (ibv_cmd_alloc_pd(ctx, pd, &cmd, sizeof(cmd),
-			     &resp, sizeof(resp))) {
+	if (ibv_cmd_alloc_pd(ctx, pd, &cmd, sizeof(cmd), &resp, sizeof(resp))) {
 		free(pd);
 		return NULL;
 	}
@@ -127,8 +126,8 @@ static int siw_free_pd(struct ibv_pd *pd)
 	return 0;
 }
 
-static struct ibv_mr *siw_reg_mr(struct ibv_pd *pd, void *addr,
-				 size_t len, int access)
+static struct ibv_mr *siw_reg_mr(struct ibv_pd *pd, void *addr, size_t len,
+				 int access)
 {
 	struct siw_cmd_reg_umr_req cmd;
 	struct siw_cmd_reg_umr_resp resp;
@@ -143,8 +142,8 @@ static struct ibv_mr *siw_reg_mr(struct ibv_pd *pd, void *addr,
 		return NULL;
 
 	rv = ibv_cmd_reg_mr(pd, addr, len, (uintptr_t)addr, access,
-			    &mr->base_mr, &cmd.base, sizeof(cmd),
-			    &resp.base, sizeof(resp));
+			    &mr->base_mr, &cmd.base, sizeof(cmd), &resp.base,
+			    sizeof(resp));
 	if (rv) {
 		free(mr);
 		return NULL;
@@ -181,9 +180,9 @@ static struct ibv_cq *siw_create_cq(struct ibv_context *ctx, int num_cqe,
 	if (!cq)
 		return NULL;
 
-	rv = ibv_cmd_create_cq(ctx, num_cqe, channel, comp_vector,
-			       &cq->base_cq, &cmd.base, sizeof(cmd),
-			       &resp.base, sizeof(resp));
+	rv = ibv_cmd_create_cq(ctx, num_cqe, channel, comp_vector, &cq->base_cq,
+			       &cmd.base, sizeof(cmd), &resp.base,
+			       sizeof(resp));
 	if (rv) {
 		if (siw_debug)
 			printf("libsiw: CQ creation failed: %d\n", rv);
@@ -195,13 +194,12 @@ static struct ibv_cq *siw_create_cq(struct ibv_context *ctx, int num_cqe,
 	cq->id = resp.siw.cq_id;
 	cq->num_cqe = resp.siw.num_cqe;
 
-	if (resp.siw.cq_key <= SIW_MAX_UOBJ_KEY) {
-		int cq_size = resp.siw.num_cqe * sizeof(struct siw_cqe)
-				+ sizeof(struct siw_cq_ctrl);
+	if (resp.siw.cq_key != SIW_INVAL_UOBJ_KEY) {
+		int cq_size = resp.siw.num_cqe * sizeof(struct siw_cqe) +
+			      sizeof(struct siw_cq_ctrl);
 
-		cq->queue = mmap(NULL, cq_size,
-				 PROT_READ|PROT_WRITE, MAP_SHARED,
-				  ctx->cmd_fd, resp.siw.cq_key);
+		cq->queue = mmap(NULL, cq_size, PROT_READ | PROT_WRITE,
+				 MAP_SHARED, ctx->cmd_fd, resp.siw.cq_key);
 
 		if (cq->queue == MAP_FAILED) {
 			if (siw_debug)
@@ -235,8 +233,8 @@ static int siw_destroy_cq(struct ibv_cq *base_cq)
 	pthread_spin_lock(&cq->lock);
 
 	if (cq->queue)
-		munmap(cq->queue, cq->num_cqe * sizeof(struct siw_cqe)
-			+ sizeof(struct siw_cq_ctrl));
+		munmap(cq->queue, cq->num_cqe * sizeof(struct siw_cqe) +
+					  sizeof(struct siw_cq_ctrl));
 
 	rv = ibv_cmd_destroy_cq(base_cq);
 	if (rv) {
@@ -264,26 +262,25 @@ static struct ibv_srq *siw_create_srq(struct ibv_pd *pd,
 	if (!srq)
 		return NULL;
 
-	if (ibv_cmd_create_srq(pd, &srq->base_srq, attr, &cmd.base,
-			       sizeof(cmd), &resp.base, sizeof(resp))) {
+	if (ibv_cmd_create_srq(pd, &srq->base_srq, attr, &cmd.base, sizeof(cmd),
+			       &resp.base, sizeof(resp))) {
 		free(srq);
 		return NULL;
 	}
 	pthread_spin_init(&srq->lock, PTHREAD_PROCESS_PRIVATE);
 
-	if (resp.siw.srq_key <= SIW_MAX_UOBJ_KEY) {
+	if (resp.siw.srq_key != SIW_INVAL_UOBJ_KEY) {
 		struct ibv_context *ctx = pd->context;
 		int rq_size = resp.siw.num_rqe * sizeof(struct siw_rqe);
 
 		srq->num_rqe = resp.siw.num_rqe;
 
-		srq->recvq = mmap(NULL, rq_size, PROT_READ|PROT_WRITE,
+		srq->recvq = mmap(NULL, rq_size, PROT_READ | PROT_WRITE,
 				  MAP_SHARED, ctx->cmd_fd, resp.siw.srq_key);
 
 		if (srq->recvq == MAP_FAILED) {
 			if (siw_debug)
-				printf("libsiw: SRQ mapping failed: %d",
-					errno);
+				printf("libsiw: SRQ mapping failed: %d", errno);
 			goto fail;
 		}
 		return &srq->base_srq;
@@ -345,8 +342,8 @@ static struct ibv_qp *siw_create_qp(struct ibv_pd *pd,
 	if (!qp)
 		return NULL;
 
-	rv = ibv_cmd_create_qp(pd, &qp->base_qp, attr, &cmd.base,
-			       sizeof(cmd), &resp.base, sizeof(resp));
+	rv = ibv_cmd_create_qp(pd, &qp->base_qp, attr, &cmd.base, sizeof(cmd),
+			       &resp.base, sizeof(resp));
 	if (rv)
 		goto fail;
 
@@ -367,12 +364,11 @@ static struct ibv_qp *siw_create_qp(struct ibv_pd *pd,
 	pthread_spin_init(&qp->sq_lock, PTHREAD_PROCESS_PRIVATE);
 	pthread_spin_init(&qp->rq_lock, PTHREAD_PROCESS_PRIVATE);
 
-	if (resp.siw.sq_key <= SIW_MAX_UOBJ_KEY) {
+	if (resp.siw.sq_key != SIW_INVAL_UOBJ_KEY) {
 		int sq_size = resp.siw.num_sqe * sizeof(struct siw_sqe);
 
-		qp->sendq = mmap(NULL, sq_size,
-				 PROT_READ|PROT_WRITE, MAP_SHARED,
-				 base_ctx->cmd_fd, resp.siw.sq_key);
+		qp->sendq = mmap(NULL, sq_size, PROT_READ | PROT_WRITE,
+				 MAP_SHARED, base_ctx->cmd_fd, resp.siw.sq_key);
 
 		if (qp->sendq == MAP_FAILED) {
 			if (siw_debug)
@@ -388,17 +384,16 @@ static struct ibv_qp *siw_create_qp(struct ibv_pd *pd,
 	}
 	if (attr->srq) {
 		qp->srq = srq_base2siw(attr->srq);
-	} else if (resp.siw.rq_key <= SIW_MAX_UOBJ_KEY) {
+	} else if (resp.siw.rq_key != SIW_INVAL_UOBJ_KEY) {
 		int rq_size = resp.siw.num_rqe * sizeof(struct siw_rqe);
 
-		qp->recvq = mmap(NULL, rq_size, PROT_READ|PROT_WRITE,
-				 MAP_SHARED, base_ctx->cmd_fd,
-				 resp.siw.rq_key);
+		qp->recvq = mmap(NULL, rq_size, PROT_READ | PROT_WRITE,
+				 MAP_SHARED, base_ctx->cmd_fd, resp.siw.rq_key);
 
 		if (qp->recvq == MAP_FAILED) {
 			if (siw_debug)
 				printf("libsiw: RQ mapping failed: %d\n",
-					resp.siw.num_rqe);
+				       resp.siw.num_rqe);
 			qp->recvq = NULL;
 			goto fail;
 		}
@@ -470,8 +465,7 @@ static int siw_destroy_qp(struct ibv_qp *base_qp)
 	return 0;
 }
 
-static struct ibv_ah *siw_create_ah(struct ibv_pd *pd,
-				    struct ibv_ah_attr *attr)
+static struct ibv_ah *siw_create_ah(struct ibv_pd *pd, struct ibv_ah_attr *attr)
 {
 	return NULL;
 }
@@ -487,25 +481,24 @@ static void siw_async_event(struct ibv_async_event *event)
 	struct ibv_cq *base_cq = event->element.cq;
 
 	switch (event->event_type) {
-
 	case IBV_EVENT_CQ_ERR:
 		printf("libsiw: CQ[%d] event: error\n",
-			cq_base2siw(base_cq)->id);
+		       cq_base2siw(base_cq)->id);
 		break;
 
 	case IBV_EVENT_QP_FATAL:
 		printf("libsiw: QP[%d] event: fatal error\n",
-			qp_base2siw(base_qp)->id);
+		       qp_base2siw(base_qp)->id);
 		break;
 
 	case IBV_EVENT_QP_REQ_ERR:
 		printf("libsiw: QP[%d] event: request error\n",
-			qp_base2siw(base_qp)->id);
+		       qp_base2siw(base_qp)->id);
 		break;
 
 	case IBV_EVENT_QP_ACCESS_ERR:
 		printf("libsiw: QP[%d] event: access error\n",
-			qp_base2siw(base_qp)->id);
+		       qp_base2siw(base_qp)->id);
 		break;
 
 	case IBV_EVENT_SQ_DRAINED:
@@ -521,8 +514,8 @@ static void siw_async_event(struct ibv_async_event *event)
 #ifdef __STDC_NO_ATOMICS__
 #error "No built-in atomics defined!"
 #else
-#define _load_mmapped(a)	__atomic_load_n(&(a), __ATOMIC_RELAXED)
-#define _store_mmaped(a, b)	__atomic_store_n(&(a), b, __ATOMIC_RELAXED)
+#define _load_mmapped(a) __atomic_load_n(&(a), __ATOMIC_RELAXED)
+#define _store_mmaped(a, b) __atomic_store_n(&(a), b, __ATOMIC_RELAXED)
 #endif
 
 static int siw_notify_cq(struct ibv_cq *ibcq, int solicited)
@@ -533,18 +526,21 @@ static int siw_notify_cq(struct ibv_cq *ibcq, int solicited)
 	if (solicited)
 		_store_mmaped(cq->ctrl->notify, SIW_NOTIFY_SOLICITED);
 	else
-		_store_mmaped(cq->ctrl->notify, SIW_NOTIFY_SOLICITED |
-			      SIW_NOTIFY_NEXT_COMPLETION);
+		_store_mmaped(cq->ctrl->notify,
+			      SIW_NOTIFY_SOLICITED |
+				      SIW_NOTIFY_NEXT_COMPLETION);
 	return rv;
 }
 
 static enum siw_opcode map_send_opcode(enum ibv_wr_opcode ibv_op)
 {
 	switch (ibv_op) {
-
-	case IBV_WR_SEND:	return SIW_OP_SEND;
-	case IBV_WR_RDMA_WRITE:	return SIW_OP_WRITE;
-	case IBV_WR_RDMA_READ:	return SIW_OP_READ;
+	case IBV_WR_SEND:
+		return SIW_OP_SEND;
+	case IBV_WR_RDMA_WRITE:
+		return SIW_OP_WRITE;
+	case IBV_WR_RDMA_READ:
+		return SIW_OP_READ;
 	default:
 		printf("libsiw: op %d not supported\n", ibv_op);
 	}
@@ -572,16 +568,16 @@ static inline int push_send_wqe(struct ibv_send_wr *base_wr,
 {
 	uint32_t flags = map_send_flags(base_wr->send_flags);
 
-	siw_sqe->id		= base_wr->wr_id;
-	siw_sqe->num_sge	= base_wr->num_sge;
-	siw_sqe->raddr		= base_wr->wr.rdma.remote_addr;
-	siw_sqe->rkey		= base_wr->wr.rdma.rkey;
+	siw_sqe->id = base_wr->wr_id;
+	siw_sqe->num_sge = base_wr->num_sge;
+	siw_sqe->raddr = base_wr->wr.rdma.remote_addr;
+	siw_sqe->rkey = base_wr->wr.rdma.rkey;
 
 	siw_sqe->opcode = map_send_opcode(base_wr->opcode);
 	if (siw_sqe->opcode > SIW_NUM_OPCODES) {
 		if (siw_debug)
 			printf("libsiw: opcode %d unsupported\n",
-				base_wr->opcode);
+			       base_wr->opcode);
 		return -EINVAL;
 	}
 	if (sig_all)
@@ -597,19 +593,19 @@ static inline int push_send_wqe(struct ibv_send_wr *base_wr,
 			if (bytes > (int)SIW_MAX_INLINE) {
 				if (siw_debug)
 					printf("libsiw: inline data: %d:%d\n",
-						bytes, (int)SIW_MAX_INLINE);
+					       bytes, (int)SIW_MAX_INLINE);
 				return -EINVAL;
 			}
 			memcpy(data, (void *)base_wr->sg_list[i].addr,
-				base_wr->sg_list[i].length);
+			       base_wr->sg_list[i].length);
 			data += base_wr->sg_list[i++].length;
 		}
 		siw_sqe->sge[0].length = bytes;
 
 	} else if (base_wr->num_sge == 1) {
-		siw_sqe->sge[0].laddr	= base_wr->sg_list[0].addr;
-		siw_sqe->sge[0].length	= base_wr->sg_list[0].length;
-		siw_sqe->sge[0].lkey	= base_wr->sg_list[0].lkey;
+		siw_sqe->sge[0].laddr = base_wr->sg_list[0].addr;
+		siw_sqe->sge[0].length = base_wr->sg_list[0].length;
+		siw_sqe->sge[0].lkey = base_wr->sg_list[0].lkey;
 	} else if (base_wr->num_sge && base_wr->num_sge <= SIW_MAX_SGE)
 		/* this assumes same layout of siw and base SGE */
 		memcpy(siw_sqe->sge, base_wr->sg_list,
@@ -632,8 +628,8 @@ static int siw_db(struct siw_qp *qp)
 		return 0;
 
 	if (siw_debug)
-		printf("libsiw: QP[%d]: Doorbell call failed: %d\n",
-			qp->id, rv);
+		printf("libsiw: QP[%d]: Doorbell call failed: %d\n", qp->id,
+		       rv);
 
 	return rv;
 }
@@ -656,7 +652,8 @@ static int siw_post_send(struct ibv_qp *base_qp, struct ibv_send_wr *wr,
 	 * be issued. This may significantly reduce unnecessary
 	 * doorbell system calls on a busy SQ.
 	 */
-	sq_busy = _load_mmapped((&qp->sendq[(sq_put-1) % qp->num_sqe])->flags);
+	sq_busy =
+		_load_mmapped((&qp->sendq[(sq_put - 1) % qp->num_sqe])->flags);
 	sq_busy &= SIW_WQE_VALID;
 
 	/*
@@ -676,7 +673,7 @@ static int siw_post_send(struct ibv_qp *base_qp, struct ibv_send_wr *wr,
 		} else {
 			if (siw_debug)
 				printf("libsiw: QP[%d]: SQ overflow, idx %d\n",
-					qp->id, idx);
+				       qp->id, idx);
 			rv = -ENOMEM;
 			*bad_wr = wr;
 			break;
@@ -744,7 +741,7 @@ static int siw_post_recv(struct ibv_qp *base_qp, struct ibv_recv_wr *wr,
 		} else {
 			if (siw_debug)
 				printf("libsiw: QP[%d]: RQ overflow, idx %d\n",
-					qp->id, idx);
+				       qp->id, idx);
 			rv = -ENOMEM;
 			*bad_wr = wr;
 			break;
@@ -802,31 +799,31 @@ static struct {
 	enum siw_opcode siw;
 	enum ibv_wc_opcode base;
 } map_cqe_opcode[SIW_NUM_OPCODES] = {
-	{SIW_OP_WRITE,		IBV_WC_RDMA_WRITE},
-	{SIW_OP_READ,		IBV_WC_RDMA_READ},
-	{SIW_OP_READ_LOCAL_INV, IBV_WC_RDMA_READ},
-	{SIW_OP_SEND,		IBV_WC_SEND},
-	{SIW_OP_SEND_WITH_IMM,	IBV_WC_SEND},
-	{SIW_OP_SEND_REMOTE_INV, IBV_WC_SEND},
-	{SIW_OP_FETCH_AND_ADD,	IBV_WC_FETCH_ADD},
-	{SIW_OP_COMP_AND_SWAP,	IBV_WC_COMP_SWAP},
-	{SIW_OP_RECEIVE,	IBV_WC_RECV}
+	{ SIW_OP_WRITE, IBV_WC_RDMA_WRITE },
+	{ SIW_OP_READ, IBV_WC_RDMA_READ },
+	{ SIW_OP_READ_LOCAL_INV, IBV_WC_RDMA_READ },
+	{ SIW_OP_SEND, IBV_WC_SEND },
+	{ SIW_OP_SEND_WITH_IMM, IBV_WC_SEND },
+	{ SIW_OP_SEND_REMOTE_INV, IBV_WC_SEND },
+	{ SIW_OP_FETCH_AND_ADD, IBV_WC_FETCH_ADD },
+	{ SIW_OP_COMP_AND_SWAP, IBV_WC_COMP_SWAP },
+	{ SIW_OP_RECEIVE, IBV_WC_RECV }
 };
 
 static struct {
 	enum siw_opcode siw;
 	enum ibv_wc_opcode base;
 } map_cqe_status[SIW_NUM_WC_STATUS] = {
-	{SIW_WC_SUCCESS,	IBV_WC_SUCCESS},
-	{SIW_WC_LOC_LEN_ERR,	IBV_WC_LOC_LEN_ERR},
-	{SIW_WC_LOC_PROT_ERR,	IBV_WC_LOC_PROT_ERR},
-	{SIW_WC_LOC_QP_OP_ERR,	IBV_WC_LOC_QP_OP_ERR},
-	{SIW_WC_WR_FLUSH_ERR,	IBV_WC_WR_FLUSH_ERR},
-	{SIW_WC_BAD_RESP_ERR,	IBV_WC_BAD_RESP_ERR},
-	{SIW_WC_LOC_ACCESS_ERR,	IBV_WC_LOC_ACCESS_ERR},
-	{SIW_WC_REM_ACCESS_ERR,	IBV_WC_REM_ACCESS_ERR},
-	{SIW_WC_REM_INV_REQ_ERR, IBV_WC_REM_INV_REQ_ERR},
-	{SIW_WC_GENERAL_ERR,	IBV_WC_GENERAL_ERR}
+	{ SIW_WC_SUCCESS, IBV_WC_SUCCESS },
+	{ SIW_WC_LOC_LEN_ERR, IBV_WC_LOC_LEN_ERR },
+	{ SIW_WC_LOC_PROT_ERR, IBV_WC_LOC_PROT_ERR },
+	{ SIW_WC_LOC_QP_OP_ERR, IBV_WC_LOC_QP_OP_ERR },
+	{ SIW_WC_WR_FLUSH_ERR, IBV_WC_WR_FLUSH_ERR },
+	{ SIW_WC_BAD_RESP_ERR, IBV_WC_BAD_RESP_ERR },
+	{ SIW_WC_LOC_ACCESS_ERR, IBV_WC_LOC_ACCESS_ERR },
+	{ SIW_WC_REM_ACCESS_ERR, IBV_WC_REM_ACCESS_ERR },
+	{ SIW_WC_REM_INV_REQ_ERR, IBV_WC_REM_INV_REQ_ERR },
+	{ SIW_WC_GENERAL_ERR, IBV_WC_GENERAL_ERR }
 };
 
 static inline void copy_cqe(struct siw_cqe *cqe, struct ibv_wc *wc)
@@ -844,8 +841,7 @@ static inline void copy_cqe(struct siw_cqe *cqe, struct ibv_wc *wc)
 	wc->qp_num = (uint32_t)cqe->qp_id;
 }
 
-static int siw_poll_cq(struct ibv_cq *ibcq, int num_entries,
-		       struct ibv_wc *wc)
+static int siw_poll_cq(struct ibv_cq *ibcq, int num_entries, struct ibv_wc *wc)
 {
 	struct siw_cq *cq = cq_base2siw(ibcq);
 	int new = 0;
@@ -861,10 +857,9 @@ static int siw_poll_cq(struct ibv_cq *ibcq, int num_entries,
 			copy_cqe(cqe, wc);
 			_store_mmaped(cqe->flags, 0);
 			cq->cq_get++;
-			new++;
+			new ++;
 		} else
 			break;
-
 	}
 	pthread_spin_unlock(&cq->lock);
 
@@ -872,32 +867,32 @@ static int siw_poll_cq(struct ibv_cq *ibcq, int num_entries,
 }
 
 static struct verbs_context_ops siw_context_ops = {
-	.query_device	= siw_query_device,
-	.query_port	= siw_query_port,
-	.query_qp       = siw_query_qp,
-	.alloc_pd	= siw_alloc_pd,
-	.dealloc_pd	= siw_free_pd,
-	.reg_mr		= siw_reg_mr,
-	.dereg_mr	= siw_dereg_mr,
-	.create_cq	= siw_create_cq,
-	.resize_cq	= siw_resize_cq,
-	.destroy_cq	= siw_destroy_cq,
-	.create_srq	= siw_create_srq,
-	.modify_srq	= siw_modify_srq,
-	.destroy_srq	= siw_destroy_srq,
-	.create_qp	= siw_create_qp,
-	.modify_qp	= siw_modify_qp,
-	.destroy_qp	= siw_destroy_qp,
-	.post_send	= siw_post_send,
-	.post_recv	= siw_post_recv,
-	.post_srq_recv	= siw_post_srq_recv,
-	.poll_cq	= siw_poll_cq,
-	.create_ah	= siw_create_ah,
-	.destroy_ah	= siw_destroy_ah,
-	.attach_mcast	= NULL,
-	.detach_mcast	= NULL,
-	.req_notify_cq	= siw_notify_cq,
-	.async_event	= siw_async_event
+	.query_device = siw_query_device,
+	.query_port = siw_query_port,
+	.query_qp = siw_query_qp,
+	.alloc_pd = siw_alloc_pd,
+	.dealloc_pd = siw_free_pd,
+	.reg_mr = siw_reg_mr,
+	.dereg_mr = siw_dereg_mr,
+	.create_cq = siw_create_cq,
+	.resize_cq = siw_resize_cq,
+	.destroy_cq = siw_destroy_cq,
+	.create_srq = siw_create_srq,
+	.modify_srq = siw_modify_srq,
+	.destroy_srq = siw_destroy_srq,
+	.create_qp = siw_create_qp,
+	.modify_qp = siw_modify_qp,
+	.destroy_qp = siw_destroy_qp,
+	.post_send = siw_post_send,
+	.post_recv = siw_post_recv,
+	.post_srq_recv = siw_post_srq_recv,
+	.poll_cq = siw_poll_cq,
+	.create_ah = siw_create_ah,
+	.destroy_ah = siw_destroy_ah,
+	.attach_mcast = NULL,
+	.detach_mcast = NULL,
+	.req_notify_cq = siw_notify_cq,
+	.async_event = siw_async_event
 };
 
 static struct verbs_context *siw_alloc_context(struct ibv_device *base_dev,
@@ -915,8 +910,8 @@ static struct verbs_context *siw_alloc_context(struct ibv_device *base_dev,
 	if (!ctx)
 		return NULL;
 
-	if (ibv_cmd_get_context(&ctx->base_ctx, &cmd, sizeof(cmd),
-				&resp.base, sizeof(resp))) {
+	if (ibv_cmd_get_context(&ctx->base_ctx, &cmd, sizeof(cmd), &resp.base,
+				sizeof(resp))) {
 		verbs_uninit_context(&ctx->base_ctx);
 		free(ctx);
 
@@ -949,8 +944,8 @@ static struct verbs_device *siw_device_alloc(struct verbs_sysfs_dev *unused)
 
 static void siw_device_free(struct verbs_device *vdev)
 {
-	struct siw_device *dev = container_of(vdev, struct siw_device,
-					      base_dev);
+	struct siw_device *dev =
+		container_of(vdev, struct siw_device, base_dev);
 	free(dev);
 }
 
@@ -959,15 +954,15 @@ static const struct verbs_match_ent rnic_table[] = {
 	{},
 };
 
-static struct verbs_device_ops siw_dev_ops = {
-	.name = "siw",
-	.match_min_abi_version = 0,
-	.match_max_abi_version = INT_MAX,
-	.match_table = rnic_table,
-	.alloc_device = siw_device_alloc,
-	.uninit_device = siw_device_free,
-	.alloc_context = siw_alloc_context,
-	.free_context = siw_free_context
-};
+static struct verbs_device_ops siw_dev_ops = { .name = "siw",
+					       .match_min_abi_version = 0,
+					       .match_max_abi_version = INT_MAX,
+					       .match_table = rnic_table,
+					       .alloc_device = siw_device_alloc,
+					       .uninit_device = siw_device_free,
+					       .alloc_context =
+						       siw_alloc_context,
+					       .free_context =
+						       siw_free_context };
 
 PROVIDER_DRIVER(siw, siw_dev_ops);

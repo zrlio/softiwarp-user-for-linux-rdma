@@ -3,7 +3,7 @@
  *
  * Authors: Bernard Metzler <bmt@zurich.ibm.com>
  *
- * Copyright (c) 2008-2017, IBM Corporation
+ * Copyright (c) 2008-2019, IBM Corporation
  *
  * This software is available to you under a choice of one of two
  * licenses. You may choose to be licensed under the terms of the GNU
@@ -89,4 +89,4 @@ struct siw_cmd_create_srq_resp {
 	struct ib_uverbs_create_srq_resp base;
 	struct siw_uresp_create_srq siw;
 };
-#endif	/* _SIW_ABI_H */
+#endif /* _SIW_ABI_H */
